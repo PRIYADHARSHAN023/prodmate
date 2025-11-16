@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+httpx
+pydantic
+python-dotenv
+requests
+redis
+sqlitedict
+loguru
+prometheus-client

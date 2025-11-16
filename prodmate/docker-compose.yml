@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  coordinator:
+    build: .
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      TASK_AGENT: http://task:8101
+      SCHEDULE_AGENT: http://schedule:8102
+      REMINDER_AGENT: http://reminder:8103
+      MEMORY_AGENT: http://memory:8104
+      SEARCH_AGENT: http://search:8105
+  task:
+    build: .
+    command: uvicorn agents.task_manager.app:app --host 0.0.0.0 --port 8101 --reload
+    ports: ["8101:8101"]
+  schedule:
+    build: .
+    command: uvicorn agents.schedule.app:app --host 0.0.0.0 --port 8102 --reload
+    ports: ["8102:8102"]
+  reminder:
+    build: .
+    command: uvicorn agents.reminder.app:app --host 0.0.0.0 --port 8103 --reload
+    ports: ["8103:8103"]
+  memory:
+    build: .
+    command: uvicorn agents.memory.app:app --host 0.0.0.0 --port 8104 --reload
+    ports: ["8104:8104"]
+  search:
+    build: .
+    command: uvicorn agents.search.app:app --host 0.0.0.0 --port 8105 --reload
+    ports: ["8105:8105"]
