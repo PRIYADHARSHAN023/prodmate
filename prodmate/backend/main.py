@@ -1,8 +1,18 @@
 from fastapi import FastAPI, HTTPException, Request
 import httpx
-from shared.models import UserRequest, AgentResponse
 from loguru import logger
 import os
+import sys
+
+# ------------------------------
+# FIX: Add shared folder to path
+# ------------------------------
+BASE_DIR = os.path.abspath(os.path.join(os.getcwd(), "prodmate"))
+SHARED_PATH = os.path.join(BASE_DIR, "shared")
+sys.path.append(SHARED_PATH)
+# ------------------------------
+
+from shared.models import UserRequest, AgentResponse
 
 app = FastAPI()
 AGENT_URLS = {
@@ -21,6 +31,7 @@ def startup():
 @app.post("/api/v1/handle")
 async def handle(req: UserRequest, request: Request):
     text = req.text.lower()
+    
     # naive dispatch rules
     if "task" in text or "todo" in text or "add task" in text:
         agent = "task_manager"
@@ -35,22 +46,28 @@ async def handle(req: UserRequest, request: Request):
 
     url = f"{AGENT_URLS[agent]}/tool/run"
     headers = {"X-Trace-Id": req.request_id}
+
     async with httpx.AsyncClient(timeout=30) as client:
         r = await client.post(url, json=req.dict(), headers=headers)
+
     if r.status_code != 200:
         logger.error(f"Agent {agent} error: {r.text}")
         raise HTTPException(status_code=500, detail="Agent error")
+
     resp = AgentResponse(**r.json())
     logger.info(f"Request {req.request_id} routed to {agent} -> {resp.status}")
     return resp.dict()
 
 @app.post("/api/v1/operation/{op_id}/complete")
 async def complete_op(op_id: str, decision: dict):
-    # For prototype: forward to reminder agent by convention
     agent = "reminder"
     url = f"{AGENT_URLS[agent]}/operation/{op_id}/complete"
+
     async with httpx.AsyncClient(timeout=30) as client:
         r = await client.post(url, json=decision)
+
     if r.status_code != 200:
         raise HTTPException(status_code=500, detail="Operation completion failed")
+
     return r.json()
+
